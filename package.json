@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:staged": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -17,6 +18,7 @@
     "jest": "^29.7.0",
     "lint-staged": "^15.5.0",
     "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
     "ts-standard": "^12.0.2",
     "typescript": "^5.8.2"
   }

@@ -31,3 +31,20 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new Error('Missing parameter: email'))
   })
 })
+
+describe('SignUp Controller', () => {
+  test('Should return status code 200 if all parameters are correct', () => {
+    const sut = new SignUpController()
+    const HttpRequest = {
+      body: {
+        name: 'name',
+        email: 'email@mail.com',
+        password: 'password',
+        passwordConfirm: 'password'
+      }
+    }
+    const httpResponse = sut.handle(HttpRequest)
+    expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body).toBe('User successfully created')
+  })
+})

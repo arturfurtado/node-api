@@ -1,9 +1,20 @@
 import { SignUpController } from '.'
+import { InvalidParamError } from '../../errors/invalidParamError'
 import { MissingParamsError } from '../../errors/missinParamsError'
+
+const makeSut = (): SignUpController => {
+  class EmailValidatorStub {
+    isValid (email: string): boolean {
+      return true
+    }
+  }
+  const emailValidator = new EmailValidatorStub()
+  return new SignUpController(emailValidator)
+}
 
 describe('SignUp Controller', () => {
   test('Should return status code 400 if name doesnt exists in body request', () => {
-    const sut = new SignUpController()
+    const sut = makeSut()
     const HttpRequest = {
       body: {
         email: 'mail@mail.com',
@@ -16,7 +27,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamsError('name'))
   })
   test('Should return status code 400 if email doesnt exists in body request', () => {
-    const sut = new SignUpController()
+    const sut = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -30,7 +41,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if password doesnt exists in body request', () => {
-    const sut = new SignUpController()
+    const sut = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -44,7 +55,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if confirmPassword doesnt exists in body request', () => {
-    const sut = new SignUpController()
+    const sut = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -57,8 +68,23 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamsError('confirmPassword'))
   })
 
+  test('Should return status code 400 if emails isnt valid', () => {
+    const sut = makeSut()
+    const HttpRequest = {
+      body: {
+        name: 'name',
+        email: 'email@mail.com',
+        password: 'password',
+        confirmPassword: 'passwordConfirm'
+      }
+    }
+    const httpResponse = sut.handle(HttpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+  })
+
   test('Should return status code 200 if all parameters are correct', () => {
-    const sut = new SignUpController()
+    const sut = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',

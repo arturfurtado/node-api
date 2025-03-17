@@ -1,20 +1,30 @@
 import { SignUpController } from '.'
 import { InvalidParamError } from '../../errors/invalidParamError'
 import { MissingParamsError } from '../../errors/missinParamsError'
+import { EmailValidator } from '../../protocols/emailValidator'
 
-const makeSut = (): SignUpController => {
-  class EmailValidatorStub {
+interface SutTypes {
+  sut: SignUpController
+  emailValidator: EmailValidator
+}
+
+const makeSut = (): SutTypes => {
+  class EmailValidatorStub implements EmailValidator {
     isValid (email: string): boolean {
       return true
     }
   }
   const emailValidator = new EmailValidatorStub()
-  return new SignUpController(emailValidator)
+  const sut = new SignUpController(emailValidator)
+  return {
+    sut,
+    emailValidator
+  }
 }
 
 describe('SignUp Controller', () => {
   test('Should return status code 400 if name doesnt exists in body request', () => {
-    const sut = makeSut()
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         email: 'mail@mail.com',
@@ -27,7 +37,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamsError('name'))
   })
   test('Should return status code 400 if email doesnt exists in body request', () => {
-    const sut = makeSut()
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -41,7 +51,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if password doesnt exists in body request', () => {
-    const sut = makeSut()
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -55,7 +65,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if confirmPassword doesnt exists in body request', () => {
-    const sut = makeSut()
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
@@ -69,7 +79,8 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if emails isnt valid', () => {
-    const sut = makeSut()
+    const { sut, emailValidator } = makeSut()
+    jest.spyOn(emailValidator, 'isValid').mockReturnValueOnce(false)
     const HttpRequest = {
       body: {
         name: 'name',
@@ -84,7 +95,7 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 200 if all parameters are correct', () => {
-    const sut = makeSut()
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',

@@ -1,10 +1,9 @@
-import { SignUpController } from '.'
-import { InvalidParamError } from '../../errors/invalidParamError'
-import { MissingParamsError } from '../../errors/missinParamsError'
-import { EmailValidator } from '../../protocols/emailValidator'
+import { CreateUserController } from './createUserController'
+import { InvalidParamError, MissingParamsError, ServerError } from '../errors'
+import { EmailValidator } from '../protocols/emailValidator'
 
 interface SutTypes {
-  sut: SignUpController
+  sut: CreateUserController
   emailValidator: EmailValidator
 }
 
@@ -15,7 +14,7 @@ const makeSut = (): SutTypes => {
     }
   }
   const emailValidator = new EmailValidatorStub()
-  const sut = new SignUpController(emailValidator)
+  const sut = new CreateUserController(emailValidator)
   return {
     sut,
     emailValidator
@@ -92,6 +91,42 @@ describe('SignUp Controller', () => {
     const httpResponse = sut.handle(HttpRequest)
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+  })
+
+  test('Should call IsValid if email is not valid', () => {
+    const { sut, emailValidator } = makeSut()
+    const spyIsValid = jest.spyOn(emailValidator, 'isValid')
+    const HttpRequest = {
+      body: {
+        name: 'name',
+        email: 'email@mail.com',
+        password: 'password',
+        confirmPassword: 'passwordConfirm'
+      }
+    }
+    sut.handle(HttpRequest)
+    expect(spyIsValid).toHaveBeenCalledWith('email@mail.com')
+  })
+
+  test('Should return status code 500 if emailvalidator return exception', () => {
+    class EmailValidatorStub implements EmailValidator {
+      isValid (email: string): boolean {
+        throw new Error()
+      }
+    }
+    const emailValidator = new EmailValidatorStub()
+    const sut = new CreateUserController(emailValidator)
+    const HttpRequest = {
+      body: {
+        name: 'name',
+        email: 'email@mail.com',
+        password: 'password',
+        confirmPassword: 'passwordConfirm'
+      }
+    }
+    const httpResponse = sut.handle(HttpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   test('Should return status code 200 if all parameters are correct', () => {

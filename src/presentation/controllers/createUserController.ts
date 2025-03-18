@@ -16,6 +16,9 @@ export class CreateUserController implements Controller {
           return BadRequest(new MissingParamsError(fields))
         }
       }
+      if (HttpRequest.body.password !== HttpRequest.body.confirmPassword) {
+        return BadRequest(new InvalidParamError('passwords arent equal'))
+      }
       const isEmailValid = this.emailValidator.isValid(HttpRequest?.body?.email)
       if (!isEmailValid) {
         return BadRequest(new InvalidParamError('email'))

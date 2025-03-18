@@ -4,7 +4,7 @@ import { EmailValidator } from '../protocols/emailValidator'
 
 interface SutTypes {
   sut: CreateUserController
-  emailValidator: EmailValidator
+  emailValidatorStub: EmailValidator
 }
 
 const makeEmailValidator = (): EmailValidator => {
@@ -26,11 +26,11 @@ const makeEmailValidatorWithError = (): EmailValidator => {
 }
 
 const makeSut = (): SutTypes => {
-  const emailValidator = makeEmailValidator()
-  const sut = new CreateUserController(emailValidator)
+  const emailValidatorStub = makeEmailValidator()
+  const sut = new CreateUserController(emailValidatorStub)
   return {
     sut,
-    emailValidator
+    emailValidatorStub
   }
 }
 
@@ -41,7 +41,7 @@ describe('SignUp Controller', () => {
       body: {
         email: 'mail@mail.com',
         password: 'password',
-        passwordConfirm: 'password'
+        confirmPassword: 'password'
       }
     }
     const httpResponse = sut.handle(HttpRequest)
@@ -54,7 +54,7 @@ describe('SignUp Controller', () => {
       body: {
         name: 'name',
         password: 'password',
-        passwordConfirm: 'password'
+        confirmPassword: 'password'
       }
     }
     const httpResponse = sut.handle(HttpRequest)
@@ -91,14 +91,14 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return status code 400 if emails isnt valid', () => {
-    const { sut, emailValidator } = makeSut()
-    jest.spyOn(emailValidator, 'isValid').mockReturnValueOnce(false)
+    const { sut, emailValidatorStub } = makeSut()
+    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
     const HttpRequest = {
       body: {
         name: 'name',
         email: 'email@mail.com',
         password: 'password',
-        confirmPassword: 'passwordConfirm'
+        confirmPassword: 'password'
       }
     }
     const httpResponse = sut.handle(HttpRequest)
@@ -106,19 +106,34 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
 
-  test('Should call IsValid if email is not valid', () => {
-    const { sut, emailValidator } = makeSut()
-    const spyIsValid = jest.spyOn(emailValidator, 'isValid')
+  test('Should return status code 400 if confirmPassword isnt equal to password', () => {
+    const { sut } = makeSut()
     const HttpRequest = {
       body: {
         name: 'name',
         email: 'email@mail.com',
         password: 'password',
-        confirmPassword: 'passwordConfirm'
+        confirmPassword: 'invalid_password'
+      }
+    }
+    const httpResponse = sut.handle(HttpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('passwords arent equal'))
+  })
+
+  test('Should call isValid if email is not valid', () => {
+    const { sut, emailValidatorStub } = makeSut()
+    const spyIsValid = jest.spyOn(emailValidatorStub, 'isValid')
+    const HttpRequest = {
+      body: {
+        name: 'name',
+        email: 'invalid_mail',
+        password: 'password',
+        confirmPassword: 'password'
       }
     }
     sut.handle(HttpRequest)
-    expect(spyIsValid).toHaveBeenCalledWith('email@mail.com')
+    expect(spyIsValid).toHaveBeenCalledWith('invalid_mail')
   })
 
   test('Should return status code 500 if emailvalidator return exception', () => {
@@ -129,7 +144,7 @@ describe('SignUp Controller', () => {
         name: 'name',
         email: 'email@mail.com',
         password: 'password',
-        confirmPassword: 'passwordConfirm'
+        confirmPassword: 'password'
       }
     }
     const httpResponse = sut.handle(HttpRequest)
